@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, BackgroundTasks
 from pydantic import BaseModel
 import requests
 import os
@@ -10,10 +10,10 @@ class MediaRequest(BaseModel):
     imageDownloadUrl: str
 
 @app.post("/assemble")
-async def assemble_video(req: MediaRequest):
+async def assemble_video(req: MediaRequest, background_tasks: BackgroundTasks):
     image_url = req.imageDownloadUrl
 
-    # Download the image
+    # Try downloading the image
     img_response = requests.get(image_url)
     if img_response.status_code != 200:
         return {"error": "Failed to download image"}
@@ -23,9 +23,20 @@ async def assemble_video(req: MediaRequest):
     with open(image_path, "wb") as f:
         f.write(img_response.content)
 
-    # Create video using MoviePy
     output_path = "tmp/final_video.mp4"
-    clip = ImageClip(image_path, duration=600)  # 10 minutes
-    clip.write_videofile(output_path, fps=1)
 
-    return {"status": "success", "video": output_path}
+    # Start video creation in the background
+    background_tasks.add_task(generate_video, image_path, output_path)
+
+    return {
+        "status": "processing",
+        "message": "Video generation started. It will complete in the background.",
+        "videoPath": output_path
+    }
+
+def generate_video(image_path, output_path):
+    try:
+        clip = ImageClip(image_path, duration=600)  # 10 minutes
+        clip.write_videofile(output_path, fps=1)
+    except Exception as e:
+        print(f"Error during video generation: {e}")
