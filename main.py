@@ -36,7 +36,11 @@ async def assemble_video(req: MediaRequest, background_tasks: BackgroundTasks):
 
 def generate_video(image_path, output_path):
     try:
+        from moviepy.editor import ImageClip
+
         clip = ImageClip(image_path, duration=2)  # Just 2 seconds
-        clip.write_videofile(output_path, fps=0.2)  # Only 1 frame total
+        clip.write_videofile(output_path, fps=0.2, codec='libx264', audio=False)
+
+        print("✅ Video finished successfully!")
     except Exception as e:
-        print(f"Error during video generation: {e}")
+        print(f"❌ Error during video generation: {e}")
