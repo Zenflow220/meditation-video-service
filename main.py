@@ -36,7 +36,7 @@ async def assemble_video(req: MediaRequest, background_tasks: BackgroundTasks):
 
 def generate_video(image_path, output_path):
     try:
-        clip = ImageClip(image_path, duration=600)  # 10 minutes
+        clip = ImageClip(image_path, duration=10)  # 10 minutes
         clip.write_videofile(output_path, fps=1)
     except Exception as e:
         print(f"Error during video generation: {e}")
